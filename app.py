@@ -29,6 +29,11 @@ app.config['S3_SECRET'] = ''
 app.config['S3_LOCATION'] = ''
 
 
+@app.route('/')
+def index():
+    return jsonify({'message': 'Welcome to ImageApi'})
+
+
 @app.route('/images', methods=['GET', 'POST'])
 def images():
     if request.method == 'POST':
