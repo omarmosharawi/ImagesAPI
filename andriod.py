@@ -1,5 +1,5 @@
 from flask import Blueprint, request, current_app, redirect, url_for
-from helpers import get_secure_filename_filepath
+from helpers import get_secure_filename_filepath, download_from_s3
 import os
 from PIL import Image
 from zipfile import ZipFile
@@ -17,19 +17,21 @@ def create_images():
     filename = request.json['filename']
     filepath, filename = get_secure_filename_filepath(filename)
 
-    tempfolder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
+    tempfolder = os.path.join(current_app.config['DOWNLOAD_FOLDER'], 'temp')
     os.makedirs(tempfolder)
 
     for size in ICON_SIZE:
         outfile = os.path.join(tempfolder, f'{size}.png')
-        image = Image.open(filepath)
+        # image = Image.open(filepath)
+        file_stream = download_from_s3(filename)
+        image = Image.open(file_stream)
         out = image.resize((size, size))
         out.save(outfile, 'PNG')
 
     now = datetime.now()
     timestamp = str(datetime.timestamp(now)).rsplit('.')[0]
     zipfilename = f'{timestamp}.zip'
-    zipfilepath = os.path.join(current_app.config['UPLOAD_FOLDER'], zipfilename)
+    zipfilepath = os.path.join(current_app.config['DOWNLOAD_FOLDER'], zipfilename)
 
     with ZipFile(zipfilepath, 'w') as zipObj:
         for foldername, subfolders, filenames, in os.walk(tempfolder):

@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify, redirect, url_for
+import os.path
+from flask import Blueprint, request, jsonify, redirect, url_for, current_app
 from PIL import Image
-from helpers import get_secure_filename_filepath
+from helpers import get_secure_filename_filepath, download_from_s3
 
 bp = Blueprint('actions', __name__, url_prefix='/actions')
 
@@ -12,9 +13,12 @@ def resize():
 
     try:
         width, height = int(request.json['width']), int(request.json['height'])
-        image = Image.open(filepath)
+        file_stream = download_from_s3(filename)
+        # image = Image.open(filepath)
+        image = Image.open(file_stream)
         out = image.resize((width, height))
-        out.save(filepath)
+        # out.save(filepath)
+        out.save(os.path.join(current_app.config['DOWNLOAD_FOLDER'], filename))
         return redirect(url_for('download_file', name=filename))
 
     except FileNotFoundError:
